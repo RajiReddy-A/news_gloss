@@ -25,7 +25,7 @@ from pipeline.translator import translate
 logger = logging.getLogger(__name__)
 
 FETCH_INTERVAL = get_int_env("FETCH_INTERVAL_MIN", 30)
-TOP_N = get_int_env("TOP_N_PREGEN", 10)
+TOP_N = get_int_env("TOP_N_PREGEN", 20)
 LANGS = get_supported_langs()
 
 _lock = Lock()
@@ -39,7 +39,7 @@ def refresh_news() -> list[dict]:
         return []
 
     try:
-        articles = fetch_articles(max_results=get_int_env("MAX_ARTICLES", 5))
+        articles = fetch_articles(max_results=get_int_env("MAX_ARTICLES", 20))
         save_articles(articles)
         _pre_generate_text(articles[:TOP_N])
         return articles

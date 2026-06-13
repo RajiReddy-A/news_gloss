@@ -13,13 +13,13 @@ SUPPORTED_LANGS_DEFAULT = "hi,mr,ta,te,bn,kn,ml"
 
 LANG_NAMES = {
     "en": "English",
-    "hi": "Hindi",
-    "te": "Telugu",
-    "mr": "Marathi",
-    "ta": "Tamil",
-    "bn": "Bengali",
-    "kn": "Kannada",
-    "ml": "Malayalam",
+    "hi": "Hindi (हिन्दी)",
+    "te": "Telugu (తెలుగు)",
+    "mr": "Marathi (मराठी)",
+    "ta": "Tamil (தமிழ்)",
+    "bn": "Bengali (বাংলা)",
+    "kn": "Kannada (ಕನ್ನಡ)",
+    "ml": "Malayalam (മലയാളം)",
 }
 
 

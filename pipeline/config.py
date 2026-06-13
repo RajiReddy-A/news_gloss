@@ -9,7 +9,7 @@ from settings import load_environment
 
 load_environment()
 
-SUPPORTED_LANGS_DEFAULT = "hi,mr,ta,te,bn,kn,ml"
+SUPPORTED_LANGS_DEFAULT = "en,hi,mr,ta,te,bn,kn,ml"
 
 LANG_NAMES = {
     "en": "English",

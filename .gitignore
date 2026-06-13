@@ -6,3 +6,7 @@ __pycache__/
 .DS_Store
 test_output.mp3
 *.mp3
+.cache/
+scratch/
+cache/model/
+*.wav

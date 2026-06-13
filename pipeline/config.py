@@ -12,10 +12,11 @@ load_environment()
 SUPPORTED_LANGS_DEFAULT = "hi,mr,ta,te,bn,kn,ml"
 
 LANG_NAMES = {
+    "en": "English",
     "hi": "Hindi",
+    "te": "Telugu",
     "mr": "Marathi",
     "ta": "Tamil",
-    "te": "Telugu",
     "bn": "Bengali",
     "kn": "Kannada",
     "ml": "Malayalam",

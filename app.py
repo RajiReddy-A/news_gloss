@@ -29,7 +29,7 @@ import scheduler
 logging.basicConfig(level=logging.INFO)
 
 LANG_CHOICES = [(LANG_NAMES[code], code) for code in get_supported_langs()]
-DEFAULT_LANG = LANG_CHOICES[0][1] if LANG_CHOICES else "hi"
+DEFAULT_LANG = "hi"
 
 
 def _get_pipeline_info_html(
@@ -44,7 +44,7 @@ def _get_pipeline_info_html(
         if is_cached else ""
     )
     return f"""
-    <div style="background: rgba(22, 17, 43, 0.55); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 12px; padding: 16px; margin-top: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);">
+    <div style="background: #0f172a; border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 12px; padding: 16px; margin-top: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(139, 92, 246, 0.2); padding-bottom: 8px;">
             <span style="font-weight: 600; font-size: 1.05rem; color: #f1ecff; display: flex; align-items: center; gap: 6px;">
                 ℹ️ Pipeline Engine Info
@@ -68,16 +68,28 @@ def _get_pipeline_info_html(
 def _article_rows() -> list[list[str]]:
     articles = get_articles()
     if not articles:
-        return [["Loading news...", "Please wait for the first refresh"]]
+        return [["<div style='padding:16px;'>Loading news... Please wait for the first refresh</div>"]]
 
     rows = []
     for article in articles:
-        rows.append(
-            [
-                str(article.get("title", "Untitled")),
-                str(article.get("published", "")),
-            ]
-        )
+        title = str(article.get("title", "Untitled"))
+        published = str(article.get("published", ""))
+        image = str(article.get("image", ""))
+        category = article.get("category", [])
+        cat_str = category[0].upper() if category else "NEWS"
+        
+        img_style = f"background-image: url('{image}');" if image else "background: rgba(255,255,255,0.05);"
+        
+        html = f"""
+        <div class="news-list-card">
+            <div class="news-list-image" style="{img_style}"></div>
+            <div class="news-list-content">
+                <div class="news-meta"><span style="color:#38bdf8;font-weight:600;font-size:0.75rem;">{cat_str}</span> <span style="opacity:0.6;font-size:0.75rem;">• {published[:10] if published else ''}</span></div>
+                <h4 style="margin: 4px 0 0 0; font-size: 0.95rem; line-height: 1.3; font-weight: 500;">{title}</h4>
+            </div>
+        </div>
+        """
+        rows.append([html])
     return rows
 
 
@@ -91,8 +103,16 @@ def handle_article_select(evt: gr.SelectData, lang_code: str) -> tuple[str, str,
     url = str(article.get("url", ""))
     title = str(article.get("title", "Untitled"))
     description = str(article.get("description", ""))
+    image = str(article.get("image", ""))
 
-    details = f"📰 {title}\n\n{description}"
+    img_tag = f'<img src="{image}" style="width:100%; height:240px; object-fit:cover; border-radius:12px; margin-bottom:16px;" />' if image else ""
+    details = f"""
+    <div>
+        {img_tag}
+        <h2 style="margin:0 0 8px 0; font-size:1.6rem; line-height:1.2;">{title}</h2>
+        <p style="opacity:0.8; font-size:0.95rem;">{description}</p>
+    </div>
+    """
     fallback = f"{title}. {description}".strip()
 
     # Query cache for English summary and translation
@@ -119,13 +139,7 @@ def handle_article_select(evt: gr.SelectData, lang_code: str) -> tuple[str, str,
     # Determine voice engine
     target_audio = audio_path(url, lang_code)
     if target_audio.exists() and translated:
-        # Check system capabilities to guess the method used
-        from pipeline.tts import _load_indicf5
-        ref_audio = Path("assets") / f"ref_{lang_code}.wav"
-        if _load_indicf5() is not None and ref_audio.exists():
-            voice_engine = "Cached (IndicF5)"
-        else:
-            voice_engine = "Cached (gTTS Web)"
+        voice_engine = "Cached (gTTS)"
         is_cached_audio = True
     else:
         voice_engine = "Pending Generation"
@@ -152,12 +166,7 @@ def handle_lang_change(rep_url: str, lang_code: str) -> tuple[str, str, str]:
             
         target_audio = audio_path(rep_url, lang_code)
         if target_audio.exists():
-            from pipeline.tts import _load_indicf5
-            ref_audio = Path("assets") / f"ref_{lang_code}.wav"
-            if _load_indicf5() is not None and ref_audio.exists():
-                voice_engine = "Cached (IndicF5)"
-            else:
-                voice_engine = "Cached (gTTS Web)"
+            voice_engine = "Cached (gTTS)"
             is_cached_audio = True
         else:
             voice_engine = "Pending Generation"
@@ -188,12 +197,7 @@ def handle_play(rep_url: str, fallback_text: str, lang_code: str):
         else:
             trans_engine = f"Hugging Face ({MODEL})"
             
-        from pipeline.tts import _load_indicf5
-        ref_audio = Path("assets") / f"ref_{lang_code}.wav"
-        if _load_indicf5() is not None and ref_audio.exists():
-            voice_engine = "Cached (IndicF5)"
-        else:
-            voice_engine = "Cached (gTTS Web)"
+        voice_engine = "Cached (gTTS)"
             
         info_html = _get_pipeline_info_html(trans_engine, voice_engine, is_cached=True)
         yield str(target_audio), f"Playing cached {lang_name} bulletin.", summary, translated, info_html
@@ -231,190 +235,227 @@ def handle_play(rep_url: str, fallback_text: str, lang_code: str):
 
 
 CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
 
 body, .gradio-container {
-    background: radial-gradient(circle at 50% 0%, #17112a 0%, #090615 100%) !important;
+    background: radial-gradient(circle at 50% 0%, #0f172a 0%, #020617 100%) !important;
     font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif !important;
     color: #e2e0ff !important;
 }
 
-/* Premium panel containers styling */
+/* Premium panel containers styling (Glassmorphism) */
 .gradio-container .gr-panel, 
 .gradio-container .gr-box,
 .gradio-container .block,
-.gradio-container .gr-card {
-    background: rgba(22, 17, 43, 0.55) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    border: 1px solid rgba(139, 92, 246, 0.25) !important;
+.gradio-container .gr-card,
+#player-card {
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 16px !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+}
+
+#player-card {
+    padding: 24px !important;
 }
 
 /* Titles and labels styling */
 h1, h2, h3, .gr-form label {
-    color: #f1ecff !important;
+    color: #f8fafc !important;
     font-weight: 600 !important;
 }
 
 #title h1 {
-    font-size: 2.8rem;
+    font-size: 2.5rem;
     font-weight: 700;
-    text-align: center;
-    background: linear-gradient(135deg, #a78bfa 0%, #ec4899 100%);
+    text-align: left;
+    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0;
     letter-spacing: -0.02em;
 }
 
-/* Highlighted top bar for language selector */
-#top-bar {
+/* Header bar */
+#header-bar {
     margin: 1rem auto 2rem auto !important;
-    max-width: 900px !important;
-    padding: 0.5rem !important;
+    align-items: center !important;
 }
 
 #lang-selector {
-    background: rgba(26, 20, 50, 0.75) !important;
-    border: 1px solid rgba(139, 92, 246, 0.45) !important;
-    box-shadow: 0 0 25px rgba(139, 92, 246, 0.2) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 12px !important;
 }
 
-/* Action button premium styling */
-button.primary, .large-button button {
-    background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%) !important;
+/* Action button premium styling (Cyan Accent) */
+button.primary, .play-button {
+    background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%) !important;
     border: none !important;
     color: #ffffff !important;
     font-weight: 600 !important;
     border-radius: 12px !important;
-    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.45) !important;
+    box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4) !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     cursor: pointer !important;
 }
 
-button.primary:hover, .large-button button:hover {
+button.primary:hover, .play-button:hover {
     transform: translateY(-2px) !important;
-    box-shadow: 0 8px 25px rgba(124, 58, 237, 0.6) !important;
-}
-
-button:not(.primary) {
-    background: rgba(139, 92, 246, 0.12) !important;
-    border: 1px solid rgba(139, 92, 246, 0.35) !important;
-    color: #e2d3ff !important;
-    border-radius: 12px !important;
-    transition: all 0.3s ease !important;
-}
-
-button:not(.primary):hover {
-    background: rgba(139, 92, 246, 0.22) !important;
-    border-color: rgba(139, 92, 246, 0.6) !important;
-    color: #ffffff !important;
+    box-shadow: 0 8px 25px rgba(6, 182, 212, 0.6) !important;
 }
 
 /* Inputs and textareas */
 textarea, input[type="text"] {
-    background: rgba(10, 7, 22, 0.65) !important;
-    color: #f3f0ff !important;
-    border: 1px solid rgba(139, 92, 246, 0.25) !important;
+    background: #0f172a !important;
+    color: #f1f5f9 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 10px !important;
     font-family: 'Outfit', sans-serif !important;
 }
 
 textarea:focus, input[type="text"]:focus {
-    border-color: #a78bfa !important;
-    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.25) !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25) !important;
 }
 
-/* Row selection effect on table */
-.gr-table tr {
-    cursor: pointer !important;
-    transition: background 0.2s ease !important;
-}
-
-.gr-table tr:hover {
-    background: rgba(139, 92, 246, 0.18) !important;
+/* List Items / Dataframe styling */
+.gr-table {
+    border: none !important;
 }
 
 .gr-table th {
+    display: none !important; /* Hide spreadsheet headers */
+}
+
+.gr-table tr {
+    cursor: pointer !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 12px !important;
+    margin-bottom: 8px !important;
+    display: block !important;
+    transition: all 0.2s ease !important;
+}
+
+.gr-table td {
+    border: none !important;
+    color: #cbd5e1 !important;
+}
+
+.gr-table tr:hover {
+    background: rgba(56, 189, 248, 0.1) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+    transform: translateX(4px) !important;
+}
+
+/* Tabs */
+.gr-tabs > button.selected {
+    border-bottom: 2px solid #38bdf8 !important;
+    color: #38bdf8 !important;
     background: transparent !important;
-    color: #c084fc !important;
+}
+.gr-tabs > button {
+    border: none !important;
+    background: transparent !important;
+    color: #64748b !important;
     font-weight: 600 !important;
-    border-bottom: 2px solid rgba(139, 92, 246, 0.3) !important;
+}
+
+/* Custom Visual News Cards */
+.news-list-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+}
+.news-list-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+}
+.news-list-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 """
 
 with gr.Blocks(title="News in Your Language") as demo:
-    gr.Markdown(
-        "# News in Your Language\n"
-        "Select your preferred language, choose a news article from the list, and listen to a spoken bulletin.",
-        elem_id="title",
-    )
-
     selected_url = gr.State("")
     fallback_text = gr.State("")
 
-    # Top level target language selector
-    with gr.Row(elem_id="top-bar"):
-        with gr.Column():
+    # Top level header and language selector
+    with gr.Row(elem_id="header-bar"):
+        with gr.Column(scale=8):
+            gr.Markdown("# News Gloss - News in Your Language", elem_id="title")
+        with gr.Column(scale=2, min_width=150):
             lang_picker = gr.Radio(
                 choices=LANG_CHOICES,
                 value=DEFAULT_LANG,
-                label="Preferred Target Language",
-                elem_id="lang-selector"
+                label="Language",
+                elem_id="lang-selector",
+                interactive=True,
             )
 
+    # Main Bento Grid Layout
     with gr.Row():
-        with gr.Column(scale=5):
+        # Left Column: News Feed
+        with gr.Column(scale=4, elem_id="left-column"):
+            gr.Markdown("### LATEST HEADLINES")
             article_list = gr.Dataframe(
-                headers=["Headline", "Published"],
-                datatype=["str", "str"],
+                headers=["Article"],
+                datatype=["html"],
                 value=_article_rows,
                 every=1800,
                 interactive=False,
                 wrap=True,
-                label="Latest news articles",
             )
 
-        with gr.Column(scale=4):
-            details_box = gr.Textbox(
-                label="Selected Article details",
-                lines=6,
-                interactive=False,
-                placeholder="Click an article on the left to see details here..."
-            )
-            play_btn = gr.Button(
-                "Play audio bulletin",
-                variant="primary",
-                size="lg",
-                elem_classes=["large-button"],
-            )
-            status_box = gr.Textbox(label="Status", interactive=False, max_lines=2)
-            audio_out = gr.Audio(label="Audio bulletin", type="filepath", autoplay=True)
-            
-            # Global Pipeline information box (ℹ️)
-            pipeline_info = gr.HTML(
-                value=_get_pipeline_info_html(),
-                label="Pipeline Info"
-            )
+        # Right Column: Media Player Card
+        with gr.Column(scale=6, elem_id="right-column"):
+            with gr.Column(elem_id="player-card"):
+                gr.Markdown("### FEATURED ARTICLE")
+                details_box = gr.HTML(
+                    value="<div style='padding:20px; opacity:0.5;'>Click an article on the left to view details here...</div>",
+                    label="Selected Article details"
+                )
+                
+                with gr.Row():
+                    play_btn = gr.Button(
+                        "▶ Play Audio",
+                        variant="primary",
+                        size="lg",
+                        elem_classes=["play-button"],
+                    )
+                    status_box = gr.Textbox(label="", interactive=False, max_lines=1)
 
-    with gr.Row():
-        with gr.Column():
-            english_summary_box = gr.Textbox(
-                label="Simplified English bulletin (Read-Along)",
-                lines=5,
-                interactive=False,
-                placeholder="The simplified English bulletin will be displayed here..."
-            )
-        with gr.Column():
-            translated_text_box = gr.Textbox(
-                label="Translated spoken bulletin (Read-Along)",
-                lines=5,
-                interactive=False,
-                placeholder="The translated spoken bulletin will be displayed here..."
-            )
+                audio_out = gr.Audio(label="", type="filepath", autoplay=True)
+                
+                with gr.Tabs():
+                    with gr.TabItem("TRANSCRIPT"):
+                        translated_text_box = gr.Textbox(
+                            label="",
+                            lines=4,
+                            interactive=False,
+                            placeholder="The translated spoken transcript will appear here..."
+                        )
+                    with gr.TabItem("SUMMARY"):
+                        english_summary_box = gr.Textbox(
+                            label="",
+                            lines=4,
+                            interactive=False,
+                            placeholder="The simplified English summary will appear here..."
+                        )
+                    with gr.TabItem("INFO"):
+                        pipeline_info = gr.HTML(
+                            value=_get_pipeline_info_html(),
+                        )
 
     article_list.select(
         fn=handle_article_select,

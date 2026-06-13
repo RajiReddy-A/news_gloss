@@ -64,11 +64,11 @@ The optional variables can be omitted to use the defaults below.
 - `HF_PROVIDER`: defaults to `auto`
 - `HF_MODEL_SUFFIX`: optional provider policy suffix
 - `FETCH_INTERVAL_MIN`: defaults to `30`
-- `TOP_N_PREGEN`: defaults to `10`
-- `CACHE_DIR`: defaults to `/tmp/cache`
+- `TOP_N_PREGEN`: defaults to `20`
+- `CACHE_DIR`: defaults to `.cache`
 - `SUPPORTED_LANGS`: defaults to `hi,mr,ta,te,bn,kn,ml`
-- `MAX_ARTICLES`: defaults to `5`; requests are always capped at the Currents free-tier limit of `50`
+- `MAX_ARTICLES`: defaults to `20`; requests are always capped at the Currents free-tier limit of `50`
 
 ## Notes
 
-IndicF5 is attempted first for TTS. If it cannot load or a language reference clip is missing, the app falls back to gTTS so the Space remains usable.
+We use gTTS to synthesize the translated news bulletins into audio for all supported Indian languages.

@@ -1,11 +1,5 @@
-Place IndicF5 reference clips here as:
+Place the IndicF5 default reference clip here as:
 
-- `ref_hi.wav`
-- `ref_mr.wav`
-- `ref_ta.wav`
-- `ref_te.wav`
-- `ref_bn.wav`
-- `ref_kn.wav`
-- `ref_ml.wav`
+- `ref_default.wav`
 
-If a clip is missing, the app automatically falls back to gTTS for that request.
+This single voice cloning reference clip is used for all Indic languages. If it is missing, the app automatically falls back to gTTS.

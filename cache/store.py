@@ -13,7 +13,7 @@ from settings import load_environment
 
 load_environment()
 
-CACHE_DIR = Path(os.environ.get("CACHE_DIR", "/tmp/cache"))
+CACHE_DIR = Path(os.environ.get("CACHE_DIR", ".cache"))
 AUDIO_DIR = CACHE_DIR / "audio"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 AUDIO_DIR.mkdir(parents=True, exist_ok=True)

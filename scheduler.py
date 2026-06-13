@@ -81,15 +81,15 @@ def start_scheduler() -> BackgroundScheduler:
         return _scheduler
 
     _scheduler = BackgroundScheduler()
-    # Interval scheduler disabled for now; will be replaced with a daily 9AM job later
-    # _scheduler.add_job(
-    #     refresh_news_async,
-    #     "interval",
-    #     minutes=FETCH_INTERVAL,
-    #     id="refresh_news",
-    #     replace_existing=True,
-    #     max_instances=1,
-    # )
+    _scheduler.add_job(
+        refresh_news_async,
+        "cron",
+        hour=6,
+        minute=0,
+        id="refresh_news_daily",
+        replace_existing=True,
+        max_instances=1,
+    )
     _scheduler.start()
     refresh_news_async()
     return _scheduler

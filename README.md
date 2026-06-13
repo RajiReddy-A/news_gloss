@@ -1,7 +1,7 @@
 ---
 title: News in Your Language
 emoji: 📻
-colorFrom: orange
+colorFrom: indigo
 colorTo: green
 sdk: gradio
 sdk_version: "6.0.0"
